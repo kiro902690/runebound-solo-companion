@@ -234,7 +234,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
     var boards = {}, sets = {};
     TRAITS.forEach(function (t) { boards[t] = mkBoard(t, 'site'); sets[t] = mkSet(t); });
     return {
-      tab: 'combat', trait: 'Mystic', bv: 'site', act2: false, pool: null, sel: -1, round: 1, passed: false, action: null, msg: '',
+      tab: 'combat', trait: 'Mystic', bv: 'site', act2: false, pool: null, sel: -1, passed: false, action: null, msg: '',
       enemy: { name: '', hp: 6, dmg: 0 },
       boards: boards, sets: sets,
       surge: { total: 2, abilities: [{ cost: 1, used: false, none: false }, { cost: 2, used: false, none: false }] },
@@ -300,7 +300,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
     var e = S.enemy, defeated = e.hp > 0 && e.dmg >= e.hp;
     var out = '';
 
-    out += '<section class="panel"><div class="ph"><h2>Enemy</h2><span class="badge ' + (defeated ? 'good' : '') + '">' + (defeated ? 'Defeated' : 'Round ' + S.round) + '</span></div>';
+    out += '<section class="panel"><div class="ph"><h2>Enemy</h2>' + (defeated ? '<span class="badge good">Defeated</span>' : '') + '</div>';
     out += '<div><h3 style="margin-bottom:8px">Trait</h3><div class="seg" role="group" aria-label="Enemy trait">' +
       TRAITS.map(function (x) { return '<button type="button" data-act="trait" data-t="' + x + '" aria-pressed="' + (x === t) + '">' + x + '</button>'; }).join('') + '</div></div>';
     out += '<div class="grid2"><label>Enemy name<input type="text" data-bind="enemy.name" value="' + esc(e.name) + '" placeholder="e.g. Sorcerer" autocomplete="off"></label>' +
@@ -378,8 +378,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
 
   function resolver(B) {
     var cur = curId(), sp = B.find(function (s) { return s.id === cur; });
-    var out = '<section class="panel"><div class="ph"><h2>Enemy action</h2>' +
-      '<button type="button" data-act="newround">New round</button></div>';
+    var out = '<section class="panel"><div class="ph"><h2>Enemy action</h2></div>';
     out += '<p class="small muted">On the enemy’s turn, press Enemy action. It offers the topmost space that still has tokens. Skipped spaces come back on the next action. Ties for initiative go to the hero.</p>';
     if (S.action && sp) {
       out += '<div class="now"><h3>Resolve this space</h3><strong class="sname"><span class="sico">' + sym(sp.name) + '</span>' + esc(sp.name) + '</strong>' +
@@ -509,7 +508,9 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
     B.forEach(function (x) { if (!x.n) x.done = false; });
     S.action = null; S.passed = false;
   }
+  function resetSurge() { S.surge.abilities.forEach(function (x) { x.used = false; x.none = false; }); }
   function pcast() {
+    resetSurge();
     var t = S.trait, cnt = S.act2 ? 6 : 5;
     S.pool = S.sets[t].slice(0, cnt).map(function (tk, i) { return { i: i, side: Math.random() < 0.5 ? 0 : 1, spent: false, dbl: false, gone: false, a: 1 }; });
     S.sel = -1; recompute();
@@ -642,7 +643,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
       '<li>Initiative ties go to the hero.</li>' +
       '<li>Each enemy action resolves the topmost space that still has tokens, all tokens in it.</li>' +
       '<li>If a symbol cannot be resolved or would do nothing, skip to the next space and check it again next action.</li>' +
-      '<li>When nothing can be resolved, the enemy passes for the round. Next round, recast everything and start from the top.</li>' +
+      '<li>When nothing can be resolved, the enemy passes for the round. Then recast everything and start again from the top.</li>' +
       '<li>When the enemy has to choose, pick what hurts your hero most. If you cannot stay unbiased, skip the effect and deal 2 damage to your hero.</li>' +
       '<li>Shields are spent at the first chance in response to damage. If a shield and another blocking symbol are both available, the shield goes first.</li>' +
       '<li>Surge tokens are spent together on the most expensive surge ability not yet used this round. If it would do nothing, use another that would. If none would, spend nothing and go to the next space. Equal costs: resolve from the bottom of the enemy card upward. Each ability once per round.</li>' +
@@ -696,14 +697,10 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
       case 'pspent': { var tk3 = S.pool[num(d.k)]; tk3.spent = !tk3.spent; recompute(); break; }
       case 'premove': { var tk4 = S.pool[num(d.k)]; tk4.gone = true; S.sel = -1; recompute(); break; }
       case 'pdouble': { S.pool[num(d.m)].dbl = true; S.pool[num(d.m)].a = 1; S.pool[num(d.k)].spent = true; S.sel = -1; recompute(); break; }
-      case 'preset': S.pool = null; S.sel = -1; clearBoard(B); S.action = null; S.passed = false; S.msg = 'Tokens cleared.'; break;
+      case 'preset': resetSurge(); S.pool = null; S.sel = -1; clearBoard(B); S.action = null; S.passed = false; S.msg = 'Tokens cleared.'; break;
       case 'act': S.act2 = d.v === '1'; S.pool = null; S.sel = -1; break;
       case 'bv': S.bv = d.v; TRAITS.forEach(function (tt) { S.boards[tt] = mkBoard(tt, S.bv); }); S.pool = null; S.sel = -1; S.action = null; S.passed = false; S.msg = 'Board wording set to ' + (S.bv === 'pdf' ? 'the CombatBoards PDF.' : 'the rulebook / Token Caster.'); break;
-      case 'clear': S.pool = null; S.sel = -1; clearBoard(B); S.action = null; S.passed = false; S.msg = 'Tokens cleared.'; break;
-      case 'newround':
-        S.round += 1; S.pool = null; S.sel = -1; clearBoard(B); S.action = null; S.passed = false;
-        S.surge.abilities.forEach(function (x) { x.used = false; x.none = false; });
-        S.msg = 'Round ' + S.round + '. Throw the real enemy tokens and count each space below, then take the first action.'; break;
+      case 'clear': resetSurge(); S.pool = null; S.sel = -1; clearBoard(B); S.action = null; S.passed = false; S.msg = 'Tokens cleared.'; break;
       case 'action': {
         var cands = B.filter(function (s) { return s.n > 0 && !s.done; }).map(function (s) { return s.id; });
         if (!cands.length) { S.passed = true; S.action = null; S.msg = 'Nothing left to resolve. The enemy passes for the rest of the round.'; }
