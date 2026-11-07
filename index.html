@@ -1,0 +1,606 @@
+<title>Unbreakable Bonds Solo Companion</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one working column. Tabs on top, a combat tab that reads like a ledger (enemy board rows top to bottom), small panels for hero and scenario. */
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --surface-2: #e4e9f0;
+  --line: #cdd5e0;
+  --fg: #1a2230;
+  --muted: #566277;
+  --accent: #8a5f12;
+  --accent-fg: #ffffff;
+  --hero: #1f7a6f;
+  --foe: #b5412f;
+  --focus: #1b5fb5;
+  --display: "Alegreya SC", Georgia, serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1520; --surface: #172030; --surface-2: #1f2b40; --line: #2c3b55;
+    --fg: #e7ebf2; --muted: #9fabbf; --accent: #dba84c; --accent-fg: #1a1405;
+    --hero: #5db8aa; --foe: #e57a67; --focus: #7fb0ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1520; --surface: #172030; --surface-2: #1f2b40; --line: #2c3b55;
+  --fg: #e7ebf2; --muted: #9fabbf; --accent: #dba84c; --accent-fg: #1a1405;
+  --hero: #5db8aa; --foe: #e57a67; --focus: #7fb0ff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.5 var(--body);
+  padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+h1 { font: 700 30px/1.1 var(--display); letter-spacing: .02em; margin: 0; text-wrap: balance; }
+h2 { font: 700 19px/1.2 var(--display); letter-spacing: .03em; margin: 0; }
+h3 { font: 600 13px/1.2 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+p { margin: 0; }
+.sub { color: var(--muted); margin-top: 6px; max-width: 65ch; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+button {
+  font: inherit; color: inherit; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 12px; min-height: 40px; cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button.pri { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+button.ghost { background: transparent; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+input, select, textarea {
+  font: inherit; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; min-height: 40px; max-width: 100%; min-width: 0;
+}
+textarea { width: 100%; resize: vertical; min-height: 64px; }
+input[type="checkbox"] { min-height: 0; width: 18px; height: 18px; accent-color: var(--accent); }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+label.inline { flex-direction: row; align-items: center; gap: 8px; color: var(--fg); font-size: 14px; }
+
+.tabs { display: flex; gap: 4px; background: var(--surface-2); padding: 4px; border-radius: 10px; }
+.tabs button { flex: 1 1 0; border-color: transparent; background: transparent; min-width: 0; }
+.tabs button[aria-pressed="true"] { background: var(--surface); border-color: var(--line); font-weight: 600; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.ph { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.row { display: flex; gap: 8px 12px; flex-wrap: wrap; align-items: center; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+
+.seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+
+.ctr { display: inline-flex; align-items: center; gap: 6px; }
+.ctr button { width: 40px; padding: 0; font-size: 20px; line-height: 1; }
+.ctr output { min-width: 2.4ch; text-align: center; font: 500 20px var(--mono); font-variant-numeric: tabular-nums; }
+
+.bar { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.bar i { display: block; height: 100%; }
+.bar.hero i { background: var(--hero); }
+.bar.foe i { background: var(--foe); }
+.stat { display: flex; flex-direction: column; gap: 8px; }
+.stat .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.badge { font-size: 12px; font-weight: 600; letter-spacing: .04em; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.badge.bad { color: var(--foe); border-color: var(--foe); }
+.badge.good { color: var(--hero); border-color: var(--hero); }
+.badge.acc { color: var(--accent); border-color: var(--accent); }
+
+ol.board { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.sp { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px 14px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); background: var(--surface); }
+.sp:first-child { border-top: 0; }
+.sp.none .nm strong { color: var(--muted); }
+.sp.done { background: var(--surface-2); }
+.sp.done .nm strong { text-decoration: line-through; text-decoration-thickness: 1px; }
+.sp.cur { background: var(--surface-2); box-shadow: inset 4px 0 0 var(--accent); }
+.sp .nm { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sp .nm strong { font-weight: 600; }
+.sp .nm span { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.sp .col { display: flex; flex-direction: column; gap: 2px; align-items: center; }
+.sp .col small { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.sp.edit { grid-template-columns: minmax(0, 1fr); }
+.sp.edit .tools { display: flex; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 560px) {
+  .sp { grid-template-columns: 1fr 1fr; }
+  .sp .nm { grid-column: 1 / -1; }
+  .sp .st { grid-column: 1 / -1; }
+}
+
+.now { border: 1px solid var(--accent); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: var(--surface-2); }
+.now strong { font: 700 20px var(--display); letter-spacing: .03em; }
+.msg { min-height: 1.5em; color: var(--muted); }
+
+details { border: 1px solid var(--line); border-radius: 10px; padding: 0 14px; background: var(--surface); }
+details > summary { cursor: pointer; padding: 12px 0; font-weight: 600; list-style-position: inside; }
+details[open] > summary { border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+details > .inner { padding-bottom: 14px; display: flex; flex-direction: column; gap: 12px; }
+.tok { display: grid; grid-template-columns: 2.4ch 1fr 1fr; gap: 8px; align-items: center; }
+.face { display: flex; gap: 6px; }
+.face select { flex: 1 1 auto; }
+.face input[type="number"] { width: 64px; flex: 0 0 auto; }
+.gl { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.tok b { font: 500 14px var(--mono); color: var(--muted); }
+.ab { display: flex; gap: 8px 14px; align-items: center; flex-wrap: wrap; padding: 8px 0; border-top: 1px solid var(--line); }
+.ab:first-of-type { border-top: 0; }
+.result { padding: 12px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-weight: 500; }
+table.w { width: 100%; border-collapse: collapse; }
+table.w th, table.w td { text-align: left; padding: 8px 10px; border-top: 1px solid var(--line); font-size: 14px; vertical-align: top; }
+table.w th { color: var(--muted); font-weight: 600; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; border-top: 0; }
+.wb { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px 14px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+.wb:first-of-type { border-top: 0; }
+.wb .nm { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wb .nm span { color: var(--muted); font-size: 13px; }
+@media (max-width: 560px) { .wb { grid-template-columns: 1fr 1fr; } .wb .nm { grid-column: 1 / -1; } }
+ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div id="app"></div>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'ub-solo-companion-v3';
+  var TRAITS = ['Warrior', 'Mystic', 'Savage', 'Trickster'];
+  var TABS = [['combat', 'Combat'], ['hero', 'Hero'], ['scen', 'Scenario'], ['notes', 'Reminders']];
+  var BOARDS = {
+    Warrior: [['Agility', 'Flip blank to double (first choice) or skull; otherwise force your foe to remove one token'], ['Double', 'Double surge first; otherwise double highest skull'], ['Skull', '+1 skull'], ['Surge', 'Sections 3 | 2 | 1'], ['Shield', '+1 shield against the hammer symbol']],
+    Mystic: [['Agility', 'Flip blank; otherwise force your foe to recast their highest-value token'], ['Double', 'Double surge first; otherwise double highest skull'], ['Surge', 'Sections 3 | 2 | 1'], ['Tactic', 'Copy shield in response to damage; otherwise copy highest skull'], ['Skull', ''], ['Shield', '+1 shield against tactic']],
+    Savage: [['Double', 'Double highest skull (first choice) or highest charge; otherwise double surge'], ['Surge', 'Sections 3 | 2 | 1'], ['Charge', '+1 charge if you have a shield'], ['Skull', ''], ['Shield', '']],
+    Trickster: [['Agility', 'Flip blank to shield (first choice) or tactic; otherwise heal 1 damage'], ['Surge', 'Sections 3 | 2 | 1'], ['Tactic', 'Copy shield in response to damage; otherwise copy highest skull'], ['Skull', ''], ['Shield', '+1 shield against surge abilities']]
+  };
+  var ABILITY = {
+    Warrior: 'No additional effect.',
+    Mystic: 'If any surge is left in your pool at the end of a combat round, deal 1 damage.',
+    Savage: 'When you engage your foe in combat, deal 1 damage.',
+    Trickster: 'You have +1 initiative.'
+  };
+  /* Token faces read from the Token Caster screenshots: [space, value, gold]. Tokens 1-5 are the base set; token 6 is added in Act II. */
+  var TOKENS = {
+    Warrior: [[['Agility', 1], ['Skull', 1]], [['', 0, 1], ['Skull', 1]], [['Shield', 1], ['Skull', 1]], [['Surge', 1], ['Skull', 1, 1]], [['Double', 1], ['', 0, 1]], [['Surge', 1, 1], ['Skull', 2]]],
+    Mystic: [[['Skull', 1], ['Agility', 1, 1]], [['Skull', 1], ['Surge', 1, 1]], [['Skull', 1], ['Double', 1]], [['Surge', 1], ['Shield', 1]], [['Tactic', 1, 1], ['', 0]], [['Skull', 2], ['Surge', 1, 1]]],
+    Savage: [[['Surge', 1], ['', 0, 1]], [['Charge', 2], ['Surge', 1, 1]], [['Skull', 1], ['Charge', 1, 1]], [['Skull', 1], ['Shield', 1]], [['Skull', 1], ['', 0, 1]], [['Skull', 2], ['Double', 1]]],
+    Trickster: [[['Surge', 2], ['Skull', 1]], [['Shield', 1], ['', 0, 1]], [['Skull', 1, 1], ['Agility', 1]], [['Tactic', 1], ['', 0]], [['Skull', 1], ['Agility', 1, 1]], [['Skull', 2], ['Surge', 1, 1]]]
+  };
+
+  function uid() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function mkBoard(t) {
+    return BOARDS[t].map(function (r, i) { return { id: 's' + (i + 1), name: r[0], note: r[1], n: 0, v: 0, done: false }; });
+  }
+  function mkSet(t) {
+    var B = mkBoard(t);
+    return TOKENS[t].map(function (tok) {
+      return tok.map(function (f) {
+        var sp = B.find(function (x) { return x.name === f[0]; });
+        return { sp: sp ? sp.id : '', v: f[1], g: f[2] ? 1 : 0 };
+      });
+    });
+  }
+  function defaults() {
+    var boards = {}, sets = {};
+    TRAITS.forEach(function (t) { boards[t] = mkBoard(t); sets[t] = mkSet(t); });
+    return {
+      tab: 'combat', trait: 'Mystic', act2: false, round: 1, passed: false, action: null, msg: '',
+      enemy: { name: '', hp: 6, dmg: 0 },
+      boards: boards, sets: sets,
+      surge: { total: 2, abilities: [{ cost: 1, used: false, none: false }, { cost: 2, used: false, none: false }] },
+      hero: { name: '', hp: 8, dmg: 0, gold: 0, prep: 0, turn: 1, trophies: 0, rumors: 0, quests: 0, notes: '' },
+      scen: { act: 1, scorched: 0, warbands: [{ name: 'Warband 1', units: 0, up: true }], webs: 0, ariad: false },
+      ui: { edit: false, setOpen: false, surgeOpen: false }
+    };
+  }
+  function load() {
+    var d = defaults();
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var s = JSON.parse(raw);
+        Object.keys(d).forEach(function (k) {
+          if (s[k] === undefined || k === 'action' || k === 'msg') return;
+          if (d[k] && typeof d[k] === 'object' && !Array.isArray(d[k])) Object.assign(d[k], s[k]);
+          else d[k] = s[k];
+        });
+      }
+    } catch (e) {}
+    return d;
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+  var S = load();
+  var app = document.getElementById('app');
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function get(path) { return path.split('.').reduce(function (o, k) { return o == null ? o : o[k]; }, S); }
+  function put(path, val) {
+    var ks = path.split('.'), last = ks.pop();
+    var o = ks.reduce(function (o, k) { return o[k]; }, S);
+    o[last] = val;
+  }
+
+  /* ---------- small components ---------- */
+  function ctr(path, o) {
+    o = o || {};
+    var min = o.min == null ? 0 : o.min, max = o.max == null ? 999 : o.max, lab = esc(o.label || '');
+    var base = ' data-act="bump" data-path="' + path + '" data-min="' + min + '" data-max="' + max + '"';
+    return '<span class="ctr" role="group" aria-label="' + lab + '">' +
+      '<button type="button"' + base + ' data-d="-1" aria-label="Decrease ' + lab + '">−</button>' +
+      '<output>' + get(path) + '</output>' +
+      '<button type="button"' + base + ' data-d="1" aria-label="Increase ' + lab + '">+</button></span>';
+  }
+  function meter(cls, dmg, hp) {
+    var pct = hp > 0 ? clamp(100 - (dmg / hp) * 100, 0, 100) : 0;
+    return '<div class="bar ' + cls + '" aria-hidden="true"><i style="width:' + pct + '%"></i></div>';
+  }
+
+  /* ---------- combat ---------- */
+  function curId() { return S.action ? S.action.cands[S.action.idx] : null; }
+
+  function combat() {
+    var t = S.trait, B = S.boards[t], cur = curId();
+    var e = S.enemy, defeated = e.hp > 0 && e.dmg >= e.hp;
+    var out = '';
+
+    out += '<section class="panel"><div class="ph"><h2>Enemy</h2><span class="badge ' + (defeated ? 'good' : '') + '">' + (defeated ? 'Defeated' : 'Round ' + S.round) + '</span></div>';
+    out += '<div><h3 style="margin-bottom:8px">Trait</h3><div class="seg" role="group" aria-label="Enemy trait">' +
+      TRAITS.map(function (x) { return '<button type="button" data-act="trait" data-t="' + x + '" aria-pressed="' + (x === t) + '">' + x + '</button>'; }).join('') + '</div></div>';
+    out += '<div class="grid2"><label>Enemy name<input type="text" data-bind="enemy.name" value="' + esc(e.name) + '" placeholder="e.g. Sorcerer" autocomplete="off"></label>' +
+      '<label>Enemy health<input type="number" inputmode="numeric" min="1" max="99" data-bind="enemy.hp" data-rr="1" value="' + e.hp + '"></label></div>';
+    out += '<div class="stat"><div class="top"><h3>Damage on enemy</h3>' + ctr('enemy.dmg', { label: 'enemy damage', max: 99 }) + '</div>' + meter('foe', e.dmg, e.hp) +
+      '<p class="small muted">' + e.dmg + ' of ' + e.hp + ' damage</p></div>';
+    out += '</section>';
+
+    /* token set */
+    var set = S.sets[t];
+    out += '<details data-ui="setOpen"' + (S.ui.setOpen ? ' open' : '') + '><summary>Digital token caster for ' + t + ' enemies (optional)</summary><div class="inner">' +
+      '<p class="small muted">Pre-filled from the Token Caster site screenshots (my reading, so check them against your tokens). Gold marks the initiative side. Tokens 1 to 5 are the base set; token 6 is added in Act II.</p>' +
+      '<div class="seg" role="group" aria-label="Act"><button type="button" data-act="act" data-v="0" aria-pressed="' + (!S.act2) + '">Act I (5 tokens)</button><button type="button" data-act="act" data-v="1" aria-pressed="' + S.act2 + '">Act II (6 tokens)</button></div>' +
+      '<p class="small"><strong>Header ability:</strong> ' + ABILITY[t] + '</p>';
+    set.slice(0, S.act2 ? 6 : 5).forEach(function (tok, i) {
+      out += '<div class="tok"><b>' + (i + 1) + '</b>';
+      tok.forEach(function (f, j) {
+        var base = 'sets.' + t + '.' + i + '.' + j;
+        var has = B.some(function (s) { return s.id === f.sp; });
+        out += '<div class="face"><select data-bind="' + base + '.sp" aria-label="Token ' + (i + 1) + ' side ' + (j + 1) + ' space"><option value=""' + (!has ? ' selected' : '') + '>Blank</option>' +
+          B.map(function (s) { return '<option value="' + s.id + '"' + (s.id === f.sp ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') +
+          '</select><input type="number" inputmode="numeric" min="0" max="9" data-bind="' + base + '.v" value="' + f.v + '" aria-label="Token ' + (i + 1) + ' side ' + (j + 1) + ' value"><label class="gl"><input type="checkbox" data-act="toggle" data-path="' + base + '.g"' + (f.g ? ' checked' : '') + '> gold</label></div>';
+      });
+      out += '</div>';
+    });
+    out += '</div></details>';
+
+    /* board */
+    out += '<section class="panel"><div class="ph"><h2>Combat board</h2><div class="row">' +
+      '<button type="button" data-act="cast">Cast digitally (optional)</button>' +
+      '<button type="button" data-act="clear">Clear tokens</button>' +
+      '<button type="button" class="ghost" data-act="edit" aria-pressed="' + S.ui.edit + '">' + (S.ui.edit ? 'Done editing' : 'Edit board') + '</button></div></div>';
+    if (S.ui.edit) {
+      out += '<p class="small muted">The boards are pre-filled from the Token Caster site. Change a space only if your printed board differs.</p>';
+    }
+    out += '<ol class="board">' + B.map(function (s, i) { return spaceRow(s, i, cur, t, B.length); }).join('') + '</ol>';
+    if (S.ui.edit) out += '<div><button type="button" data-act="addsp">Add space</button></div>';
+    out += '</section>';
+
+    /* resolver */
+    out += resolver(B);
+
+    /* surge helper */
+    out += surgeView();
+    return out;
+  }
+
+  function spaceRow(s, i, cur, t, len) {
+    var p = 'boards.' + t + '.' + i;
+    if (S.ui.edit) {
+      return '<li class="sp edit"><label>Space name<input type="text" data-bind="' + p + '.name" value="' + esc(s.name) + '" autocomplete="off"></label>' +
+        '<label>Printed text<textarea data-bind="' + p + '.note" placeholder="What this space tells the enemy to do">' + esc(s.note) + '</textarea></label>' +
+        '<div class="tools"><button type="button" data-act="mv" data-i="' + i + '" data-d="-1"' + (i === 0 ? ' disabled' : '') + ' aria-label="Move ' + esc(s.name) + ' up">Move up</button>' +
+        '<button type="button" data-act="mv" data-i="' + i + '" data-d="1"' + (i === len - 1 ? ' disabled' : '') + ' aria-label="Move ' + esc(s.name) + ' down">Move down</button>' +
+        '<button type="button" data-act="delsp" data-i="' + i + '" aria-label="Delete ' + esc(s.name) + '">Delete</button></div></li>';
+    }
+    var st = s.done ? 'done' : (cur === s.id ? 'cur' : (s.n > 0 ? 'wait' : 'none'));
+    var label = { done: 'Resolved', cur: 'Resolving now', wait: 'Waiting', none: 'No tokens' }[st];
+    var cls = { done: 'good', cur: 'acc', wait: '', none: '' }[st];
+    return '<li class="sp ' + st + '"><div class="nm"><strong>' + esc(s.name) + '</strong>' + (s.note ? '<span>' + esc(s.note) + '</span>' : '') + '</div>' +
+      '<div class="col"><small>Tokens</small>' + ctr(p + '.n', { label: s.name + ' tokens', max: 12 }) + '</div>' +
+      '<div class="col"><small>Value</small>' + ctr(p + '.v', { label: s.name + ' value', max: 99 }) + '</div>' +
+      '<div class="st"><span class="badge ' + cls + '">' + label + '</span></div></li>';
+  }
+
+  function resolver(B) {
+    var cur = curId(), sp = B.find(function (s) { return s.id === cur; });
+    var out = '<section class="panel"><div class="ph"><h2>Enemy action</h2>' +
+      '<button type="button" data-act="newround">New round</button></div>';
+    out += '<p class="small muted">On the enemy’s turn, press Enemy action. It offers the topmost space that still has tokens. Skipped spaces come back on the next action. Ties for initiative go to the hero.</p>';
+    if (S.action && sp) {
+      out += '<div class="now"><h3>Resolve this space</h3><strong>' + esc(sp.name) + '</strong>' +
+        '<p>' + sp.n + (sp.n === 1 ? ' token' : ' tokens') + ', value ' + sp.v + '. Resolve every token in this space.</p>' +
+        (sp.note ? '<p class="muted">' + esc(sp.note) + '</p>' : '') +
+        '<div class="row"><button type="button" class="pri" data-act="resolve">Resolved</button>' +
+        '<button type="button" data-act="skip">Can’t resolve or no effect, skip</button></div></div>';
+    } else {
+      out += '<div class="row"><button type="button" class="pri" data-act="action"' + (S.passed ? ' disabled' : '') + '>Enemy action</button>' +
+        (S.passed ? '<span class="badge bad">Enemy has passed</span>' : '') + '</div>';
+    }
+    out += '<p class="msg" aria-live="polite">' + esc(S.msg) + '</p></section>';
+    return out;
+  }
+
+  function surgePick() {
+    var g = S.surge, best = -1;
+    g.abilities.forEach(function (a, i) {
+      if (a.used || a.none || a.cost > g.total) return;
+      if (best < 0 || a.cost >= g.abilities[best].cost) best = i; /* ties: later (lower on the card) wins */
+    });
+    return best;
+  }
+  function surgeView() {
+    var g = S.surge, best = surgePick();
+    var res;
+    if (best < 0) res = 'No surge ability can be paid right now. Spend nothing and go to the next space; with no other tokens, the enemy passes.';
+    else res = 'Stack ' + g.abilities[best].cost + ' surge on ability ' + (best + 1) + ' (cost ' + g.abilities[best].cost + ').';
+    var out = '<details data-ui="surgeOpen"' + (S.ui.surgeOpen ? ' open' : '') + '><summary>Surge helper</summary><div class="inner">' +
+      '<p class="small muted">List the enemy card’s surge abilities top to bottom. The helper picks the most expensive unused ability you can pay for; equal costs go to the lower one on the card. Mark an ability “no effect” if using it would change nothing.</p>' +
+      '<div class="row"><span>Surge available</span>' + ctr('surge.total', { label: 'surge available', max: 30 }) + '</div>';
+    out += '<div>' + g.abilities.map(function (a, i) {
+      return '<div class="ab"><strong>Ability ' + (i + 1) + '</strong>' + ctr('surge.abilities.' + i + '.cost', { label: 'ability ' + (i + 1) + ' cost', min: 1, max: 9 }) +
+        '<label class="inline"><input type="checkbox" data-act="togab" data-i="' + i + '" data-k="used"' + (a.used ? ' checked' : '') + '>Used this round</label>' +
+        '<label class="inline"><input type="checkbox" data-act="togab" data-i="' + i + '" data-k="none"' + (a.none ? ' checked' : '') + '>No effect now</label>' +
+        '<button type="button" class="ghost" data-act="delab" data-i="' + i + '" aria-label="Remove ability ' + (i + 1) + '">Remove</button></div>';
+    }).join('') + '</div>';
+    out += '<div class="row"><button type="button" data-act="addab">Add ability</button></div>';
+    out += '<div class="result" aria-live="polite">' + esc(res) + '</div>';
+    out += '<div class="row"><button type="button" class="pri" data-act="useab"' + (best < 0 ? ' disabled' : '') + '>Mark it used and spend the surge</button></div>';
+    out += '</div></details>';
+    return out;
+  }
+
+  function cast() {
+    var t = S.trait, B = S.boards[t], set = S.sets[t];
+    var configured = set.some(function (tok) { return tok.some(function (f) { return f.sp && B.some(function (s) { return s.id === f.sp; }); }); });
+    if (!configured) {
+      S.msg = 'No token faces are set for ' + t + ' yet. Throw the real tokens and set the counts on the board.';
+      return;
+    }
+    B.forEach(function (s) { s.n = 0; s.v = 0; s.done = false; });
+    S.action = null; S.passed = false;
+    var landed = 0;
+    var cnt = S.act2 ? 6 : 5, gold = 0;
+    set.slice(0, cnt).forEach(function (tok) {
+      var f = tok[Math.random() < 0.5 ? 0 : 1];
+      var sp = B.find(function (s) { return s.id === f.sp; });
+      if (sp) { sp.n += 1; sp.v += num(f.v); landed += 1; }
+      if (f.g) gold += 1;
+    });
+    S.msg = 'Cast: ' + landed + ' of ' + cnt + ' tokens landed on a space; the rest showed blank. Enemy initiative: ' + (gold + (t === 'Trickster' ? 1 : 0)) + ' gold' + (t === 'Trickster' ? ' (includes the Trickster +1).' : '.');
+  }
+
+  /* ---------- hero ---------- */
+  function heroView() {
+    var h = S.hero, down = h.hp > 0 && h.dmg >= h.hp;
+    var out = '<section class="panel"><div class="ph"><h2>Hero</h2>' + (down ? '<span class="badge bad">Defeated</span>' : '') + '</div>';
+    out += '<div class="grid2"><label>Hero name<input type="text" data-bind="hero.name" value="' + esc(h.name) + '" placeholder="e.g. Tatianna" autocomplete="off"></label>' +
+      '<label>Max health (from your hero sheet)<input type="number" inputmode="numeric" min="1" max="99" data-bind="hero.hp" data-rr="1" value="' + h.hp + '"></label></div>';
+    out += '<div class="stat"><div class="top"><h3>Damage</h3>' + ctr('hero.dmg', { label: 'hero damage', max: 99 }) + '</div>' + meter('hero', h.dmg, h.hp) +
+      '<p class="small muted">' + h.dmg + ' of ' + h.hp + ' damage</p></div>';
+    out += '<div class="stat"><div class="top"><h3>Gold</h3>' + ctr('hero.gold', { label: 'gold', max: 999 }) + '</div></div>';
+    out += '<div class="stat"><div class="top"><h3>Turn</h3>' + ctr('hero.turn', { label: 'turn', min: 1, max: 999 }) + '</div></div>';
+    out += '<div class="stat"><div class="top"><h3>Trophies</h3>' + ctr('hero.trophies', { label: 'trophies', max: 99 }) + '</div>' +
+      '<p class="small muted">If a card makes you discard a trophy and you have none, nothing happens.</p></div>';
+    out += '<div class="grid2"><div class="stat"><div class="top"><h3>Quests</h3>' + ctr('hero.quests', { label: 'quests', max: 99 }) + '</div></div>' +
+      '<div class="stat"><div class="top"><h3>Rumors</h3>' + ctr('hero.rumors', { label: 'rumors', max: 99 }) + '</div></div></div>';
+    out += '<div class="stat"><div class="top"><h3>Prepare token</h3>' +
+      (h.prep ? '<span class="badge good">Held</span>' : '<span class="badge">None</span>') + '</div>' +
+      '<div class="row"><button type="button" data-act="setv" data-path="hero.prep" data-v="1"' + (h.prep ? ' disabled' : '') + '>Take prepare action</button>' +
+      '<button type="button" data-act="setv" data-path="hero.prep" data-v="0"' + (h.prep ? '' : ' disabled') + '>Spend it for 1 extra action</button></div>' +
+      '<p class="small muted">You can hold 1 prepare token on your hero sheet at a time.</p></div>';
+    out += '<label>Notes<textarea data-bind="hero.notes" placeholder="Skills learned, quests, rumors, items">' + esc(h.notes) + '</textarea></label>';
+    out += '</section>';
+    return out;
+  }
+
+  /* ---------- scenario ---------- */
+  function targets(u) {
+    if (u <= 0) return 'No target yet. When it would move with nothing to target, it gains 1 unit instead.';
+    var t = ['shrines'];
+    if (u >= 2) t.push('towns');
+    if (u >= 3) t.push('strongholds');
+    if (u >= 4) t.push('cities');
+    return 'Can target ' + t.join(', ') + '.';
+  }
+  function scenView() {
+    var sc = S.scen;
+    var out = '<section class="panel"><div class="ph"><h2>Act</h2></div><div class="seg" role="group" aria-label="Current act">' +
+      [1, 2, 3].map(function (n) { return '<button type="button" data-act="setv" data-path="scen.act" data-v="' + n + '" aria-pressed="' + (sc.act === n) + '">Act ' + ['I', 'II', 'III'][n - 1] + '</button>'; }).join('') + '</div></section>';
+
+    out += '<section class="panel"><div class="ph"><h2>Scorched earth</h2></div>' +
+      '<div class="stat"><div class="top"><h3>Scorched earth tokens on the map</h3>' + ctr('scen.scorched', { label: 'scorched earth tokens', max: 99 }) + '</div>' +
+      '<p class="small muted">Warbands cannot target hexes that hold a scorched earth token. Cards such as Malaana\u2019s Siphon Power count these (max 4 for that ability).</p></div></section>';
+
+    out += '<section class="panel"><div class="ph"><h2>End-of-turn warband step</h2></div><ol class="tips">' +
+      '<li>Start at story space I and take each faceup warband in order.</li>' +
+      '<li>Move it 1 hex toward the nearest civilized hex (city, town, stronghold or shrine) it can target. Skip hexes with scorched earth.</li>' +
+      '<li>If it has nothing it can target, it gains 1 unit instead of moving.</li>' +
+      '<li>Update units and location below, then place scorched earth if the story card says so.</li></ol></section>';
+
+    out += '<section class="panel"><div class="ph"><h2>The Locust Swarm</h2><button type="button" data-act="addwb">Add warband</button></div>' +
+      '<p class="small muted">Defeat all warbands to win. The rulebook text I read lists no separate loss condition. Faceup warbands move 1 hex toward the nearest civilized hex they can target, starting from story space I. Warbands cannot target hexes with scorched earth.</p><div>';
+    if (!sc.warbands.length) out += '<p class="muted">No warbands left. If this is a Locust Swarm game, you have won.</p>';
+    sc.warbands.forEach(function (w, i) {
+      var p = 'scen.warbands.' + i;
+      out += '<div class="wb"><div class="nm"><input type="text" data-bind="' + p + '.name" value="' + esc(w.name) + '" aria-label="Warband name" autocomplete="off">' +
+        '<input type="text" data-bind="' + p + '.loc" value="' + esc(w.loc) + '" placeholder="Hex or location" aria-label="Warband location" autocomplete="off">' +
+        '<span>' + (w.up ? esc(targets(w.units)) : 'Facedown on the story track. It does not move until a story card flips it.') + '</span></div>' +
+        '<div class="col">' + ctr(p + '.units', { label: w.name + ' units', max: 9 }) + '</div>' +
+        '<button type="button" data-act="flipwb" data-i="' + i + '">' + (w.up ? 'Faceup' : 'Facedown') + '</button>' +
+        '<button type="button" class="ghost" data-act="delwb" data-i="' + i + '" aria-label="Remove ' + esc(w.name) + '">Defeated</button></div>';
+    });
+    out += '</div>';
+    out += '<table class="w"><thead><tr><th>Units</th><th>Can target</th></tr></thead><tbody>' +
+      '<tr><td>1</td><td>Shrines</td></tr><tr><td>2</td><td>Shrines, towns</td></tr><tr><td>3</td><td>Shrines, towns, strongholds</td></tr><tr><td>4</td><td>Shrines, towns, strongholds, cities</td></tr></tbody></table></section>';
+
+    out += '<section class="panel"><div class="ph"><h2>Caught in a Web</h2></div>' +
+      '<p class="small muted">Place 1 web in each city at the end of Act I. In solo, Queen Ariad spawns immediately. Defeat her to win; you lose at the end of Act II or if your hero is eliminated.</p>' +
+      '<div class="stat"><div class="top"><h3>Webs in cities</h3>' + ctr('scen.webs', { label: 'webs in cities', max: 30 }) + '</div></div>' +
+      '<label class="inline"><input type="checkbox" data-act="toggle" data-path="scen.ariad"' + (sc.ariad ? ' checked' : '') + '>Queen Ariad is on the board</label></section>';
+    return out;
+  }
+
+  /* ---------- reminders ---------- */
+  function notesView() {
+    return '<section class="panel"><h2>Solo rules in short</h2><ul class="tips">' +
+      '<li>Solo is the co-op ruleset without party skill cards and without envelopes. Trading and parties do not apply.</li>' +
+      '<li>If you draw an adventure, skill or asset card that refers to another hero, discard it and draw a replacement.</li>' +
+      '<li>Read the player-number icon as 1.</li>' +
+      '<li>You hold at most 1 prepare token. Spend it for 1 extra action on a later turn.</li>' +
+      '<li>When a twist is drawn while shopping, resolve it, discard it, then draw a replacement asset.</li></ul></section>' +
+      '<section class="panel"><h2>Enemy turns</h2><ul class="tips">' +
+      '<li>Cast the tokens for the enemy’s trait and place each on the board space for its symbol.</li>' +
+      '<li>Initiative ties go to the hero.</li>' +
+      '<li>Each enemy action resolves the topmost space that still has tokens, all tokens in it.</li>' +
+      '<li>If a symbol cannot be resolved or would do nothing, skip to the next space and check it again next action.</li>' +
+      '<li>When nothing can be resolved, the enemy passes for the round. Next round, recast everything and start from the top.</li>' +
+      '<li>When the enemy has to choose, pick what hurts your hero most. If you cannot stay unbiased, skip the effect and deal 2 damage to your hero.</li>' +
+      '<li>Shields are spent at the first chance in response to damage. If a shield and another blocking symbol are both available, the shield goes first.</li>' +
+      '<li>Surge tokens are spent together on the most expensive surge ability not yet used this round. If it would do nothing, use another that would. If none would, spend nothing and go to the next space. Equal costs: resolve from the bottom of the enemy card upward. Each ability once per round.</li>' +
+      '<li>Agility abilities do not use surge tokens; resolve them from the enemy card text.</li>' +
+      '<li>A + bonus applies only if a token with that symbol is being resolved, and it adds to their combined value.</li>' +
+      '<li>Charge: spending X charge deals X unblockable damage, and whoever spent charge cannot block for the rest of that round.</li>' +
+      '<li>Tactic: spend one to copy a symbol on any token in any pool, or to copy a blocking symbol just before taking damage. It cannot be spent alongside other tokens in the same action, and a tactic cannot be copied.</li>' +
+      '<li>When a token is recast or flipped, move it to its new space. A stack moves to the section matching its new total.</li></ul></section>' +
+      '<section class="panel"><h2>Rulings quick list</h2><details><summary>Failed Malaana’s Warband test and no trophy?</summary><p class="small">Nothing more happens. The card only says to discard 1 trophy, and it has no other penalty. This is the general convention, not a printed ruling.</p></details><details><summary>Initiative tie in combat?</summary><p class="small">The hero takes the first combat action.</p></details><details><summary>Enemy has to make a choice?</summary><p class="small">Choose what hurts the hero most. If you can’t decide impartially, deal 2 damage to the hero instead.</p></details><details><summary>A space can’t be resolved?</summary><p class="small">Skip it, go to the next space with tokens, and check it again on the enemy’s next action. If nothing can be resolved, the enemy passes.</p></details><details><summary>Player-number icon in solo?</summary><p class="small">Read it as 1.</p></details><details><summary>Card refers to another hero?</summary><p class="small">Discard it and draw a replacement.</p></details><details><summary>Caught in a Web: when does Queen Ariad spawn in solo?</summary><p class="small">Immediately, after webs are placed in each city at the end of Act I.</p></details><details><summary>Locust Swarm: what if a warband has no target?</summary><p class="small">It gains 1 unit instead of moving.</p></details></section>' +
+      '<p class="small muted">This page is a tracker, not the rulebook. Rules here come from the official Unbreakable Bonds rules PDF. Check it, your printed boards and your scenario sheets for the exact text.</p>';
+  }
+
+  /* ---------- shell ---------- */
+  function shell() {
+    var body = S.tab === 'hero' ? heroView() : S.tab === 'scen' ? scenView() : S.tab === 'notes' ? notesView() : combat();
+    return '<div class="wrap"><header><h1>Unbreakable Bonds</h1>' +
+      '<p class="sub">Solo companion for Runebound, 3rd Edition. You move the miniatures; this runs the enemy’s combat board and tracks the rest.</p></header>' +
+      '<nav class="tabs" aria-label="Sections">' +
+      TABS.map(function (x) { return '<button type="button" data-act="tab" data-t="' + x[0] + '" aria-pressed="' + (S.tab === x[0]) + '">' + x[1] + '</button>'; }).join('') +
+      '</nav>' + body + '</div>';
+  }
+
+  function focusKey(el) {
+    if (!el || !el.dataset || !el.dataset.act) return null;
+    return Object.keys(el.dataset).map(function (k) {
+      return '[data-' + k.replace(/[A-Z]/g, function (m) { return '-' + m.toLowerCase(); }) + '="' + CSS.escape(el.dataset[k]) + '"]';
+    }).join('');
+  }
+  function render() {
+    var key = focusKey(document.activeElement);
+    app.innerHTML = shell();
+    if (key) { try { var el = app.querySelector(key); if (el) el.focus(); } catch (e) {} }
+  }
+
+  /* ---------- actions ---------- */
+  function clearBoard(B) { B.forEach(function (s) { s.n = 0; s.v = 0; s.done = false; }); }
+  function act(a, d) {
+    var B = S.boards[S.trait];
+    switch (a) {
+      case 'tab': S.tab = d.t; break;
+      case 'trait': S.trait = d.t; S.action = null; S.passed = false; S.msg = ''; break;
+      case 'bump': put(d.path, clamp(num(get(d.path)) + num(d.d), num(d.min), num(d.max))); break;
+      case 'setv': put(d.path, num(d.v)); break;
+      case 'toggle': put(d.path, !get(d.path)); break;
+      case 'edit': S.ui.edit = !S.ui.edit; break;
+      case 'cast': cast(); break;
+      case 'act': S.act2 = d.v === '1'; break;
+      case 'clear': clearBoard(B); S.action = null; S.passed = false; S.msg = 'Tokens cleared.'; break;
+      case 'newround':
+        S.round += 1; clearBoard(B); S.action = null; S.passed = false;
+        S.surge.abilities.forEach(function (x) { x.used = false; x.none = false; });
+        S.msg = 'Round ' + S.round + '. Throw the real enemy tokens and count each space below, then take the first action.'; break;
+      case 'action': {
+        var cands = B.filter(function (s) { return s.n > 0 && !s.done; }).map(function (s) { return s.id; });
+        if (!cands.length) { S.passed = true; S.action = null; S.msg = 'Nothing left to resolve. The enemy passes for the rest of the round.'; }
+        else { S.action = { cands: cands, idx: 0 }; S.msg = ''; }
+        break;
+      }
+      case 'resolve': {
+        var id = curId(), sp = B.find(function (s) { return s.id === id; });
+        if (sp) sp.done = true;
+        S.action = null; S.msg = (sp ? sp.name + ' resolved. ' : '') + 'Hero acts next, then take the next enemy action.';
+        break;
+      }
+      case 'skip':
+        if (S.action) {
+          S.action.idx += 1;
+          if (S.action.idx >= S.action.cands.length) {
+            S.action = null; S.passed = true; S.msg = 'Nothing could be resolved. The enemy passes for the rest of the round.';
+          }
+        }
+        break;
+      case 'addsp': B.push({ id: uid(), name: 'New space', note: '', n: 0, v: 0, done: false }); break;
+      case 'delsp': {
+        var i = num(d.i), rm = B[i];
+        if (rm) {
+          B.splice(i, 1);
+          S.sets[S.trait].forEach(function (tok) { tok.forEach(function (f) { if (f.sp === rm.id) f.sp = ''; }); });
+          S.action = null;
+        }
+        break;
+      }
+      case 'mv': {
+        var a1 = num(d.i), b1 = a1 + num(d.d);
+        if (b1 >= 0 && b1 < B.length) { var tmp = B[a1]; B[a1] = B[b1]; B[b1] = tmp; S.action = null; }
+        break;
+      }
+      case 'addab': S.surge.abilities.push({ cost: 1, used: false, none: false }); break;
+      case 'delab': S.surge.abilities.splice(num(d.i), 1); break;
+      case 'togab': S.surge.abilities[num(d.i)][d.k] = !S.surge.abilities[num(d.i)][d.k]; break;
+      case 'useab': {
+        var best = surgePick();
+        if (best >= 0) { var ab = S.surge.abilities[best]; ab.used = true; S.surge.total = Math.max(0, S.surge.total - ab.cost); }
+        break;
+      }
+      case 'addwb': S.scen.warbands.push({ name: 'Warband ' + (S.scen.warbands.length + 1), units: 0, up: false }); break;
+      case 'flipwb': S.scen.warbands[num(d.i)].up = !S.scen.warbands[num(d.i)].up; break;
+      case 'delwb': S.scen.warbands.splice(num(d.i), 1); break;
+    }
+    save();
+    render();
+  }
+
+  app.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (!b || b.disabled) return;
+    if (b.tagName === 'INPUT') return; /* checkboxes are handled on change */
+    act(b.dataset.act, b.dataset);
+  });
+  app.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.tagName === 'INPUT' && t.type === 'checkbox' && t.dataset.act) { act(t.dataset.act, t.dataset); return; }
+    if (t.dataset && t.dataset.rr) render();
+  });
+  app.addEventListener('input', function (e) {
+    var t = e.target, p = t.dataset && t.dataset.bind;
+    if (!p) return;
+    put(p, t.type === 'number' ? num(t.value) : t.value);
+    save();
+  });
+  app.addEventListener('toggle', function (e) {
+    var d = e.target;
+    if (d.dataset && d.dataset.ui) { S.ui[d.dataset.ui] = d.open; save(); }
+  }, true);
+
+  render();
+})();
+</script>
