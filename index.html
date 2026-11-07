@@ -291,6 +291,8 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
       '<p class="small muted">' + e.dmg + ' of ' + e.hp + ' damage</p></div>';
     out += '</section>';
 
+    out += poolView(B, t);
+
     /* token set */
     var set = S.sets[t];
     out += '<details data-ui="setOpen"' + (S.ui.setOpen ? ' open' : '') + '><summary>Digital token caster for ' + t + ' enemies (optional)</summary><div class="inner">' +
@@ -309,8 +311,6 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
       out += '</div>';
     });
     out += '</div></details>';
-
-    out += poolView(B, t);
 
     /* board */
     out += '<section class="panel"><div class="ph"><h2>Combat board</h2><div class="row">' +
