@@ -162,6 +162,13 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
 @media (prefers-reduced-motion: reduce) { .disc.flip { animation: none; } }
 .tokbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .tokbar .lab { font-weight: 600; margin-right: 4px; }
+.sname { display: flex; align-items: center; gap: 10px; }
+.sico { display: inline-grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 8px; background: var(--fg); color: var(--bg); }
+.sico svg { width: 22px; height: 22px; }
+.ic { display: inline-block; vertical-align: -0.22em; margin-inline: 1px; }
+.ic svg { width: 1.15em; height: 1.15em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sico svg [fill="var(--surface-2)"] { fill: var(--fg); }
 </style>
 
 <div id="app"></div>
@@ -188,7 +195,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
   var TOKENS = {
     Warrior: [[['Agility', 1], ['Skull', 1]], [['', 0, 1], ['Skull', 1]], [['Shield', 1], ['Skull', 1]], [['Surge', 1], ['Skull', 1, 1]], [['Double', 1], ['', 0, 1]], [['Surge', 1, 1], ['Skull', 2]]],
     Mystic: [[['Skull', 1], ['Agility', 1, 1]], [['Skull', 1], ['Surge', 1, 1]], [['Skull', 1], ['Double', 1]], [['Surge', 1], ['Shield', 1]], [['Tactic', 1, 1], ['', 0]], [['Skull', 2], ['Surge', 1, 1]]],
-    Savage: [[['Surge', 1], ['', 0, 1]], [['Charge', 2], ['Surge', 1, 1]], [['Skull', 1], ['Charge', 1, 1]], [['Skull', 1], ['Shield', 1]], [['Skull', 1], ['', 0, 1]], [['Skull', 2], ['Double', 1]]],
+    Savage: [[['Surge', 1], ['', 0, 1]], [['Charge', 2], ['Surge', 1]], [['Skull', 1], ['Charge', 1, 1]], [['Skull', 1], ['Shield', 1]], [['Skull', 1], ['', 0, 1]], [['Skull', 2], ['Double', 1]]],
     Trickster: [[['Surge', 2], ['Skull', 1]], [['Shield', 1], ['', 0, 1]], [['Skull', 1, 1], ['Agility', 1]], [['Tactic', 1], ['', 0]], [['Skull', 1], ['Agility', 1, 1]], [['Skull', 2], ['Surge', 1, 1]]]
   };
 
@@ -336,7 +343,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
     var st = s.done ? 'done' : (cur === s.id ? 'cur' : (s.n > 0 ? 'wait' : 'none'));
     var label = { done: 'Resolved', cur: 'Resolving now', wait: 'Waiting', none: 'No tokens' }[st];
     var cls = { done: 'good', cur: 'acc', wait: '', none: '' }[st];
-    return '<li class="sp ' + st + '"><div class="nm"><strong>' + esc(s.name) + '</strong>' + (s.note ? '<span>' + esc(s.note) + '</span>' : '') + '</div>' +
+    return '<li class="sp ' + st + '"><div class="nm"><strong class="sname"><span class="sico">' + sym(s.name) + '</span>' + esc(s.name) + '</strong>' + (s.note ? '<span>' + iconize(s.note) + '</span>' : '') + '</div>' +
       '<div class="col"><small>Tokens</small>' + ctr(p + '.n', { label: s.name + ' tokens', max: 12 }) + '</div>' +
       '<div class="col"><small>Value</small>' + ctr(p + '.v', { label: s.name + ' value', max: 99 }) + '</div>' +
       '<div class="st"><span class="badge ' + cls + '">' + label + '</span></div></li>';
@@ -348,9 +355,9 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
       '<button type="button" data-act="newround">New round</button></div>';
     out += '<p class="small muted">On the enemy’s turn, press Enemy action. It offers the topmost space that still has tokens. Skipped spaces come back on the next action. Ties for initiative go to the hero.</p>';
     if (S.action && sp) {
-      out += '<div class="now"><h3>Resolve this space</h3><strong>' + esc(sp.name) + '</strong>' +
+      out += '<div class="now"><h3>Resolve this space</h3><strong class="sname"><span class="sico">' + sym(sp.name) + '</span>' + esc(sp.name) + '</strong>' +
         '<p>' + sp.n + (sp.n === 1 ? ' token' : ' tokens') + ', value ' + sp.v + '. Resolve every token in this space.</p>' +
-        (sp.note ? '<p class="muted">' + esc(sp.note) + '</p>' : '') +
+        (sp.note ? '<p class="muted">' + iconize(sp.note) + '</p>' : '') +
         '<div class="row"><button type="button" class="pri" data-act="resolve">Resolved</button>' +
         '<button type="button" data-act="skip">Can’t resolve or no effect, skip</button></div></div>';
     } else {
@@ -416,14 +423,21 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
     Skull: '<path d="M12 3a8 8 0 0 0-8 8c0 2.6 1.2 4.3 3 5.4V20h3v-2h4v2h3v-3.6c1.8-1.1 3-2.8 3-5.4a8 8 0 0 0-8-8z"/><circle cx="8.8" cy="11.3" r="1.9" fill="var(--surface-2)"/><circle cx="15.2" cy="11.3" r="1.9" fill="var(--surface-2)"/>',
     Shield: '<path d="M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5z"/>',
     Surge: '<path d="M13.5 2 4.5 14H10l-1.2 8 9.2-12.5h-5.6z"/>',
-    Double: '<circle cx="9" cy="14" r="6" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="15.5" cy="8.5" r="4.2" fill="currentColor"/>',
-    Agility: '<path d="M3 19c5-1 9.5-4.5 12.5-11l2 .8c-.6 2.6-1.8 4.7-3.4 6.4 2.8-.4 5-1.7 6.4-3.6-.6 5.6-5.8 9.4-12.5 8.4-1.8-.3-3.5-.5-5-1z"/>',
+    Double: '<circle cx="9.5" cy="14.5" r="5.6" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="14.5" cy="9.5" r="5.6"/>',
+    Agility: '<path d="M3 20 12.5 3.5l2.8 1.6L8.6 20z"/><path d="M9.5 20 17 7.5l2.8 1.6L14.6 20z"/><path d="M15.5 20 21 11.5l1.2 1.4L20 20z"/>',
     Tactic: '<path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/>',
     Charge: '<path d="M12 2l7 9h-4.5v11h-5V11H5z"/>',
     Blank: '<rect x="5" y="10.5" width="14" height="3.6" rx="1.8"/>'
   };
   function sym(name, cls) {
     return '<svg class="' + (cls || '') + '" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' + (GLYPH[name] || GLYPH.Blank) + '</svg>';
+  }
+  function iconize(text) {
+    return esc(text).replace(/\b(skull|damage|shield|surge|double|agility|tactic|charge|blank)(s?)\b/gi, function (m, w, pl) {
+      var k = w.toLowerCase(); if (k === 'damage') k = 'skull';
+      var name = k.charAt(0).toUpperCase() + k.slice(1);
+      return '<span class="ic">' + sym(name) + '<span class="sr">' + m + '</span></span>';
+    });
   }
   function faceInfo(B, t, tok) {
     var f = S.sets[t][tok.i][tok.side];
