@@ -47,14 +47,25 @@ Solo play is the co-op ruleset minus party skills and envelopes, with each enemy
 
 ## Enemy boards (top to bottom)
 
-Read from the Token Caster; follow your printed board if it differs. `*` marks the gold (initiative) side; `{2}` means value 2.
+Wording is exactly what the CombatBoards_v2 PDF prints. The PDF's header banner is blank, so the header abilities come from the Token Caster. `*` marks the gold (initiative) side; `{2}` means value 2.
 
 | Trait | Header ability | Board order |
 | --- | --- | --- |
 | Warrior | None | Agility, Double, Skull, Surge, Shield |
-| Mystic | Any surge left at the end of a combat round deals 1 | Agility, Double, Surge, Tactic, Skull, Shield |
-| Savage | On engage, deal 1 | Double, Surge, Charge, Skull, Shield |
-| Trickster | +1 initiative | Agility, Surge, Tactic, Skull, Shield |
+| Mystic | Any surge left at the end of a combat round deals 1 | Agility, Double, Surge, Skull, Shield |
+| Savage | On engage, deal 1 | Double, Surge, Agility, Skull, Shield |
+| Trickster | +1 initiative | Agility, Surge, Double, Skull, Shield |
+
+Surge spaces have sections 3, 2 and 1. Skull spaces have no text. Each Shield space has a blank slot beside it.
+
+- **Warrior:** Agility: flip blank to double or skull; otherwise flip foe's highest value token. Double: double surge first; otherwise double highest skull.
+- **Mystic:** Agility: flip blank to double (first choice), surge or skull; otherwise flip foe's highest value token. Double: double surge first; otherwise double highest skull.
+- **Savage:** Double: double highest skull (first choice) or double surge. Agility: flip blank to double (first choice), surge or skull; otherwise flip foe's highest value token.
+- **Trickster:** Agility: flip blank to shield (first choice) or skull; otherwise flip foe's highest value token. Double: double shield first; otherwise double highest skull.
+
+**What "flip blank" means.** A token has two sides. Find one of the enemy's own tokens showing blank whose other side is one of the listed symbols, and turn it over. Use the first choice if available, then the next. If no blank token can become any of them, flip the hero's highest value token instead.
+
+**Where the Token Caster differs.** It adds a Tactic space (Mystic and Trickster) and a Charge space (Savage), bonuses on the Warrior's Skull and Shield, and terser agility text. Some tokens show Tactic or Charge faces that have no space on the PDF boards; the app can switch between the two wordings.
 
 | Trait | Act I tokens | Added in Act II |
 | --- | --- | --- |
