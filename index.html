@@ -176,7 +176,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
 <script>
 (function () {
   'use strict';
-  var KEY = 'ub-solo-companion-v4';
+  var KEY = 'ub-solo-companion-v5';
   var TRAITS = ['Warrior', 'Mystic', 'Savage', 'Trickster'];
   var TABS = [['combat', 'Combat'], ['hero', 'Hero'], ['scen', 'Scenario'], ['notes', 'Reminders']];
   /* Board wording. 'pdf' is the CombatBoards_v2.pdf wording exactly; 'site' is the Token Caster wording. */
@@ -195,6 +195,10 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
     }
   };
   /* Agility: the order of symbols a blank token may be flipped to (first choice first). */
+  var OTHER = {
+    pdf: { Warrior: 'flip the hero\u2019s highest-value token', Mystic: 'flip the hero\u2019s highest-value token', Savage: 'flip the hero\u2019s highest-value token', Trickster: 'flip the hero\u2019s highest-value token' },
+    site: { Warrior: 'the hero removes one of their tokens', Mystic: 'the hero recasts their highest-value token', Savage: '', Trickster: 'the enemy heals 1 damage' }
+  };
   var AGI = {
     pdf: { Warrior: ['Double', 'Skull'], Mystic: ['Double', 'Surge', 'Skull'], Savage: ['Double', 'Surge', 'Skull'], Trickster: ['Shield', 'Skull'] },
     site: { Warrior: ['Double', 'Skull'], Mystic: [], Savage: [], Trickster: ['Shield', 'Tactic'] }
@@ -215,7 +219,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
 
   function uid() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function mkBoard(t, ver) {
-    return BV[ver || 'pdf'][t].map(function (r) { return { id: 'sp_' + r[0], name: r[0], note: r[1], n: 0, v: 0, done: false }; });
+    return BV[ver || 'site'][t].map(function (r) { return { id: 'sp_' + r[0], name: r[0], note: r[1], n: 0, v: 0, done: false }; });
   }
   function mkSet(t) {
     var B = mkBoard(t, 'site');
@@ -228,9 +232,9 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
   }
   function defaults() {
     var boards = {}, sets = {};
-    TRAITS.forEach(function (t) { boards[t] = mkBoard(t, 'pdf'); sets[t] = mkSet(t); });
+    TRAITS.forEach(function (t) { boards[t] = mkBoard(t, 'site'); sets[t] = mkSet(t); });
     return {
-      tab: 'combat', trait: 'Mystic', bv: 'pdf', act2: false, pool: null, sel: -1, round: 1, passed: false, action: null, msg: '',
+      tab: 'combat', trait: 'Mystic', bv: 'site', act2: false, pool: null, sel: -1, round: 1, passed: false, action: null, msg: '',
       enemy: { name: '', hp: 6, dmg: 0 },
       boards: boards, sets: sets,
       surge: { total: 2, abilities: [{ cost: 1, used: false, none: false }, { cost: 2, used: false, none: false }] },
@@ -330,10 +334,14 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
     out += '<section class="panel"><div class="ph"><h2>Combat board</h2><div class="row">' +
       '<button type="button" data-act="clear">Clear tokens</button>' +
       '<button type="button" class="ghost" data-act="edit" aria-pressed="' + S.ui.edit + '">' + (S.ui.edit ? 'Done editing' : 'Edit board') + '</button></div></div>';
-    out += '<div class="seg" role="group" aria-label="Board wording"><button type="button" data-act="bv" data-v="pdf" aria-pressed="' + (S.bv !== 'site') + '">CombatBoards PDF wording</button><button type="button" data-act="bv" data-v="site" aria-pressed="' + (S.bv === 'site') + '">Token Caster wording</button></div>';
-    out += '<p class="small"><strong>Header ability:</strong> ' + ABILITY[t] + (S.bv !== 'site' ? ' <span class="muted">(The banner is blank on the PDF; this comes from the Token Caster.)</span>' : '') + '</p>';
-    if (S.bv !== 'site') out += '<p class="small muted">The PDF boards have no Tactic or Charge space. If a token shows one of those, it can\u2019t be placed on this board; switch to the Token Caster wording for those tokens.</p>';
-    out += '<details class="how"><summary>How “flip blank” works</summary><p class="small">A token has two sides. “Flip blank to double, surge or skull” means: find one of the enemy’s own tokens that is showing blank, whose other side is one of those symbols, and turn it over. Take the first choice if one is available, then the next. If no blank token can be turned into any of them, the enemy flips the hero’s highest-value token instead. The Resolve panel shows which token to flip.</p></details>';
+    out += '<div class="seg" role="group" aria-label="Board wording"><button type="button" data-act="bv" data-v="site" aria-pressed="' + (S.bv !== 'pdf') + '">Rulebook / Token Caster wording</button><button type="button" data-act="bv" data-v="pdf" aria-pressed="' + (S.bv === 'pdf') + '">CombatBoards PDF wording</button></div>';
+    out += '<p class="small"><strong>Header ability:</strong> ' + ABILITY[t] + (S.bv === 'pdf' ? ' <span class="muted">(The banner is blank on the PDF; this comes from the Token Caster.)</span>' : '') + '</p>';
+    if (S.bv === 'pdf') out += '<p class="small muted">The PDF boards have no Tactic or Charge space. If a token shows one of those, it can\u2019t be placed on this board; switch to the Rulebook / Token Caster wording for those tokens.</p>';
+    out += '<details class="how"><summary>How “flip blank” works</summary><p class="small">A token has two sides, and “flip” means turn it over to its other side. <strong>“Your foe” always means your hero:</strong> the board is written from the enemy’s side, and in solo the board stands in for the second player.</p>' +
+      (S.bv === 'pdf'
+        ? '<p class="small">PDF wording: find one of the enemy’s own tokens showing blank whose other side is one of the listed symbols, and turn it over, taking the first choice available. If none can, the enemy flips your hero’s highest-value token. Mystic note: its only blank has a Tactic on the back, so it can never match the PDF’s list.</p>'
+        : '<p class="small">Rulebook wording: if the enemy has a token showing blank, it turns that token over (for the Mystic that makes a Tactic). Where a board lists choices, such as “to double (first choice) or skull”, take the first one the token can become. If it has no blank token to flip, the “otherwise” part happens: the Mystic makes your hero recast their highest-value token, the Warrior makes your hero remove a token, and the Trickster heals 1 damage. “Highest value” is the biggest number on the token’s showing face; break ties against the hero.</p>') +
+      '</details>';
     if (S.ui.edit) {
       out += '<p class="small muted">The boards are pre-filled from the Token Caster site. Change a space only if your printed board differs.</p>';
     }
@@ -461,20 +469,27 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
   }
   function agiHelp(B, t, sp) {
     if (sp.name !== 'Agility') return '';
-    var order = (AGI[S.bv === 'site' ? 'site' : 'pdf'] || {})[t] || [];
-    if (!S.pool) return '<p class="small">Flip one of the enemy’s blank tokens whose other side is ' + (order.length ? order.join(', then ') : 'a listed symbol') + '. If none can, flip the hero’s highest-value token.</p>';
-    for (var o = 0; o < order.length; o++) {
-      for (var m = 0; m < S.pool.length; m++) {
-        var tk = S.pool[m];
-        if (tk.gone || tk.spent) continue;
-        var cur = faceInfo(B, t, tk), alt = faceInfo(B, t, { i: tk.i, side: 1 - tk.side });
-        if (cur.name === 'Blank' && alt.name === order[o]) {
-          return '<p class="small"><strong>Flip token ' + (m + 1) + '</strong>: it shows blank and its other side is ' + order[o] + (o === 0 ? ' (first choice).' : ' (choice ' + (o + 1) + ').') + '</p>' +
-            '<div class="row"><button type="button" data-act="pflip" data-k="' + m + '">Flip token ' + (m + 1) + ' now</button></div>';
-        }
+    var ver = S.bv === 'pdf' ? 'pdf' : 'site';
+    var order = (AGI[ver] || {})[t] || [];
+    var other = OTHER[ver][t] || 'the “otherwise” effect applies';
+    if (!S.pool) return '<p class="small">Flip one of the enemy’s blank tokens' + (order.length ? ' whose other side is ' + order.join(', then ') : '') + '. If it has none to flip, ' + other + '.</p>';
+    var blanks = [];
+    S.pool.forEach(function (tk, m) {
+      if (tk.gone || tk.spent) return;
+      var cur = faceInfo(B, t, tk), alt = faceInfo(B, t, { i: tk.i, side: 1 - tk.side });
+      if (cur.name === 'Blank') blanks.push({ m: m, alt: alt.name });
+    });
+    var pick = null, rank = 0;
+    if (order.length) {
+      for (var o = 0; o < order.length && !pick; o++) {
+        for (var q = 0; q < blanks.length; q++) if (blanks[q].alt === order[o]) { pick = blanks[q]; rank = o + 1; break; }
       }
+    } else if (blanks.length) { pick = blanks[0]; }
+    if (pick) {
+      return '<p class="small"><strong>Flip token ' + (pick.m + 1) + '</strong>: it shows blank and its other side is ' + pick.alt + (rank === 1 ? ' (first choice).' : rank > 1 ? ' (choice ' + rank + ').' : '.') + '</p>' +
+        '<div class="row"><button type="button" data-act="pflip" data-k="' + pick.m + '">Flip token ' + (pick.m + 1) + ' now</button></div>';
     }
-    return '<p class="small"><strong>No blank token can flip to ' + (order.length ? order.join(', ') : 'a listed symbol') + '.</strong> Flip the hero’s highest-value token instead.</p>';
+    return '<p class="small"><strong>' + (blanks.length ? 'No blank token can become ' + order.join(', ') + '.' : 'The enemy has no blank token showing.') + '</strong> Instead, ' + other + '.</p>';
   }
   function faceInfo(B, t, tok) {
     var f = S.sets[t][tok.i][tok.side];
@@ -683,7 +698,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
       case 'pdouble': { S.pool[num(d.m)].dbl = true; S.pool[num(d.m)].a = 1; S.pool[num(d.k)].spent = true; S.sel = -1; recompute(); break; }
       case 'preset': S.pool = null; S.sel = -1; clearBoard(B); S.action = null; S.passed = false; S.msg = 'Tokens cleared.'; break;
       case 'act': S.act2 = d.v === '1'; S.pool = null; S.sel = -1; break;
-      case 'bv': S.bv = d.v; TRAITS.forEach(function (tt) { S.boards[tt] = mkBoard(tt, S.bv); }); S.pool = null; S.sel = -1; S.action = null; S.passed = false; S.msg = 'Board wording set to ' + (S.bv === 'pdf' ? 'the CombatBoards PDF.' : 'the Token Caster site.'); break;
+      case 'bv': S.bv = d.v; TRAITS.forEach(function (tt) { S.boards[tt] = mkBoard(tt, S.bv); }); S.pool = null; S.sel = -1; S.action = null; S.passed = false; S.msg = 'Board wording set to ' + (S.bv === 'pdf' ? 'the CombatBoards PDF.' : 'the rulebook / Token Caster.'); break;
       case 'clear': S.pool = null; S.sel = -1; clearBoard(B); S.action = null; S.passed = false; S.msg = 'Tokens cleared.'; break;
       case 'newround':
         S.round += 1; S.pool = null; S.sel = -1; clearBoard(B); S.action = null; S.passed = false;
