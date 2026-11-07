@@ -319,6 +319,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
     if (S.ui.edit) {
       out += '<p class="small muted">The boards are pre-filled from the Token Caster site. Change a space only if your printed board differs.</p>';
     }
+    if (S.pool) out += '<p class="small muted">The board follows the token caster above. Spent and removed tokens drop off the counts.</p>';
     out += '<ol class="board">' + B.map(function (s, i) { return spaceRow(s, i, cur, t, B.length); }).join('') + '</ol>';
     if (S.ui.edit) out += '<div><button type="button" data-act="addsp">Add space</button></div>';
     out += '</section>';
@@ -448,7 +449,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
     var t = S.trait, B = S.boards[t];
     B.forEach(function (x) { x.n = 0; x.v = 0; });
     (S.pool || []).forEach(function (tok) {
-      if (tok.gone) return;
+      if (tok.gone || tok.spent) return;
       var f = S.sets[t][tok.i][tok.side];
       var sp = B.find(function (x) { return x.id === f.sp; });
       if (sp) { sp.n += 1; sp.v += num(f.v) * (tok.dbl ? 2 : 1); }
@@ -637,7 +638,7 @@ ul.tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; 
       case 'psel': S.sel = S.sel === num(d.k) ? -1 : num(d.k); break;
       case 'pflip': { var tk = S.pool[num(d.k)]; tk.side = 1 - tk.side; tk.a = 1; recompute(); break; }
       case 'precast': { var tk2 = S.pool[num(d.k)]; tk2.side = Math.random() < 0.5 ? 0 : 1; tk2.a = 1; recompute(); break; }
-      case 'pspent': { var tk3 = S.pool[num(d.k)]; tk3.spent = !tk3.spent; break; }
+      case 'pspent': { var tk3 = S.pool[num(d.k)]; tk3.spent = !tk3.spent; recompute(); break; }
       case 'premove': { var tk4 = S.pool[num(d.k)]; tk4.gone = true; S.sel = -1; recompute(); break; }
       case 'pdouble': { S.pool[num(d.m)].dbl = true; S.pool[num(d.m)].a = 1; S.pool[num(d.k)].spent = true; S.sel = -1; recompute(); break; }
       case 'preset': S.pool = null; S.sel = -1; clearBoard(B); S.action = null; S.passed = false; S.msg = 'Tokens cleared.'; break;
